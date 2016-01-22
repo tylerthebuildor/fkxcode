@@ -1,0 +1,197 @@
+#!/usr/bin/env node
+
+var fs = require('fs');
+var path = require('path');
+var log = require('verbalize');
+var argv = require('minimist')(process.argv.slice(2));
+var exec = require('child-process-promise').exec;
+var plist = require('plist');
+var fs = require('fs')
+
+// Verbalize `runner`
+log.runner = 'fkxcode';
+var version = 'v0.1.0'
+var projectPath = process.cwd();
+var projectName = projectPath.split('/')[projectPath.split('/').length - 1];
+var plistFilePath = projectPath + '/ios/' + projectName + 'Tests/Info.plist';
+
+// -p or --project   default: [name of current directory]
+// -s or --simulator default: 'iPhone 6'
+// -t or --tmp       default: '[cd]/ios/tmp'
+// -b or --bid       default: [gets bundle id from [cd]/ios/[project-name]Tests/Info.plist]
+// -h or --help      default: null
+// -v or --version   default: null
+var projectName  = argv._[0] || argv.p   || argv.project   || projectName;
+var iosSIMType   = argv._[1] || argv.s   || argv.simulator || 'iPhone 6';
+var iosTMPFolder = argv._[2] || argv.t   || argv.tmp       || projectPath + '/ios/tmp';
+var iosBundleId  = argv._[3] || argv.b   || argv.bid       || null;
+var help         = argv._[4] || argv.h   || argv.help      || null;
+var version      = argv._[5] || argv.v   || argv.version   || null;
+
+/**
+ * Application
+ */
+
+function openPlist() {
+  if (!iosBundleId) {
+    fs.readFile(plistFilePath, 'utf8', function(err, data) {
+      if (err) {
+        return console.log('could not find bundle id please specifiy one with -b');
+      }
+      var val = plist.parse(data);
+      iosBundleId = val.CFBundleIdentifier.replace(/\$\(PRODUCT_NAME\:.*\)/, 'topot');
+
+      checkiOSDeps();
+      // build_ios(projectName, iosSIMType, iosTMPFolder);
+      // open_ios_simulator();
+      // install_app_ios_simulator(projectName, iosSIMType, iosTMPFolder);
+      // launch_app_ios_simulator(projectName, iosSIMType, iosBundleId);
+    });
+  }
+}
+
+function checkiOSDeps() {
+  console.log('checkiOSDeps');
+  exec('which xctool')
+    .then(function (result) {
+      if (result.stdout) {
+        console.log('xctool is installed');
+        build_ios(projectName, iosSIMType, iosTMPFolder);
+      }
+      if (result.stderr) {
+        console.log('stderr: ', result.stderr);
+      }
+    })
+    .fail(function (err) {
+      console.log('Please install xctool first: `npm install -g xctool`');
+    })
+    .progress(function (childProcess) {
+      // console.log('childProcess.pid: ', childProcess.pid);
+    });
+}
+
+function build_ios(projectName, iosSIMType, iosTMPFolder) {
+  console.log('build_ios');
+  var command = '' +
+  'xctool -project                                                             \ ' +
+         'ios/"'+projectName+'".xcodeproj                                      \ ' +
+         '-scheme "'+projectName+'"                                            \ ' +
+         '-sdk iphonesimulator                                                 \ ' +
+         '-destination "platform=iphonesimulator,name='+iosSIMType+'"          \ ' +
+         'build CONFIGURATION_BUILD_DIR="'+iosTMPFolder+'"';
+
+  exec(command)
+    .then(function (result) {
+      if (result.stdout) {
+        // console.log('stdout: ', result.stdout);
+        console.log('project build success');
+        open_ios_simulator();
+      }
+      if (result.stderr) {
+        console.log('stderr: ', result.stderr);
+      }
+    })
+    .fail(function (err) {
+      console.error('ERROR: ', err);
+    })
+    .progress(function (childProcess) {
+      // console.log('childProcess.pid: ', childProcess.pid);
+    });
+}
+
+function open_ios_simulator() {
+  console.log('open_ios_simulator');
+  var command = 'open -a Simulator';
+
+  exec(command)
+    .then(function (result) {
+      if (result.stdout) {
+        // console.log('stdout: ', result.stdout);
+
+      }
+      if (result.stderr) {
+        console.log('stderr: ', result.stderr);
+      }
+    })
+    .fail(function (err) {
+      console.error('ERROR: ', err);
+    })
+    .progress(function (childProcess) {
+      // console.log('childProcess.pid: ', childProcess.pid);
+    });
+
+  setTimeout(function() {
+    console.log('simulator open... hopefully');
+    install_app_ios_simulator(projectName, iosSIMType, iosTMPFolder);
+  }, 5000);
+}
+
+function install_app_ios_simulator(projectName, iosSIMType, iosTMPFolder) {
+  console.log('install_app_ios_simulator');
+  var command = 'xcrun simctl install "'+iosSIMType+'" "'+iosTMPFolder+'/'+projectName+'.app"';
+
+  exec(command)
+    .then(function (result) {
+      if (result.stdout) {
+        // console.log('stdout: ', result.stdout);
+        console.log('app installed on device');
+        launch_app_ios_simulator(projectName, iosSIMType, iosBundleId);
+      }
+      if (result.stderr) {
+        console.log('stderr: ', result.stderr);
+      }
+    })
+    .fail(function (err) {
+      console.error('ERROR: ', err);
+    })
+    .progress(function (childProcess) {
+      // console.log('childProcess.pid: ', childProcess.pid);
+    });
+
+    setTimeout(function() {
+      console.log('app installed on device... hopefully');
+      launch_app_ios_simulator(projectName, iosSIMType, iosBundleId);
+    }, 5000);
+}
+
+function launch_app_ios_simulator(projectName, iosSIMType, iosBundleId) {
+  console.log('launch_app_ios_simulator');
+  console.log('your bundle id: ' + iosBundleId);
+  // var command = 'xcrun simctl launch "'+iosSIMType+'" "'+iosBundleId+'.'+projectName+'"';
+  var command = 'xcrun simctl launch "'+iosSIMType+'" "'+iosBundleId+'"';
+
+  exec(command)
+    .then(function (result) {
+      if (result.stdout) {
+        // console.log('stdout: ', result.stdout);
+        console.log('app launched');
+        console.log('fuck xcode!');
+      }
+      if (result.stderr) {
+        console.log('stderr: ', result.stderr);
+      }
+    })
+    .fail(function (err) {
+      console.error('ERROR: ', err);
+    })
+    .progress(function (childProcess) {
+      // console.log('childProcess.pid: ', childProcess.pid);
+    });
+}
+
+/**
+ * Init Main
+ */
+if (help) {
+  console.log('Options');
+  console.log("  -p or --project   default: [name of current directory] ");
+  console.log("  -s or --simulator default: 'iPhone 6' ");
+  console.log("  -t or --tmp       default: '[cd]/ios/tmp' ");
+  console.log("  -b or --bid       default: [gets bundle id from [cd]/ios/[project-name]Tests/Info.plist] ");
+  console.log("  -h or --help      default: null ");
+  console.log("  -v or --version   default: null ");
+} else if (version) {
+	console.log(version);
+} else {
+  openPlist();
+}

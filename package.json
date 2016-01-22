@@ -1,0 +1,45 @@
+{
+  "name": "fkxcode",
+  "description": "This node CLI tool let's you build, install, and run your React Native iOS apps on the simulator without ever
+  opening Xcode, because who want's to do that.",
+  "version": "0.1.0",
+  "homepage": "https://github.com/tylerbuchea/fkxcode",
+  "author": {
+    "name": "Tyler Buchea",
+    "url": "http://tylerbuchea.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/tylerbuchea/fkxcode.git"
+  },
+  "bugs": {
+    "url": "https://github.com/tylerbuchea/fkxcode/issues"
+  },
+  "licenses": [
+    {
+      "type": "MIT",
+      "url": "https://github.com/tylerbuchea/fkxcode/blob/master/LICENSE-MIT"
+    }
+  ],
+  "keywords": [
+    "cli",
+    "command line"
+  ],
+  "preferGlobal": true,
+  "bin": {
+    "fkxcode": "./bin/fkxcode"
+  },
+  "main": "index.js",
+  "engines": {
+    "node": ">=0.8"
+  },
+  "scripts": {
+    "test": "mocha -R test"
+  },
+  "dependencies": {
+    "child-process-promise": "^1.1.0",
+    "minimist": "~0.0.8",
+    "plist": "^1.2.0",
+    "verbalize": "~0.1.1"
+  }
+}
