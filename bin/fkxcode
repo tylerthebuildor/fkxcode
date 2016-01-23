@@ -39,7 +39,7 @@ function openPlist() {
         return console.log('could not find bundle id please specifiy one with -b');
       }
       var val = plist.parse(data);
-      iosBundleId = val.CFBundleIdentifier.replace(/\$\(PRODUCT_NAME\:.*\)/, 'topot');
+      iosBundleId = val.CFBundleIdentifier.replace(/\$\(PRODUCT_NAME\:.*\)/, projectName);
 
       checkiOSDeps();
       // build_ios(projectName, iosSIMType, iosTMPFolder);
@@ -47,6 +47,8 @@ function openPlist() {
       // install_app_ios_simulator(projectName, iosSIMType, iosTMPFolder);
       // launch_app_ios_simulator(projectName, iosSIMType, iosBundleId);
     });
+  } else {
+    checkiOSDeps();
   }
 }
 
